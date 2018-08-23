@@ -48,12 +48,4 @@ public class Allocator {
 		}
 	}
 
-	public static ByteBuf allocateUnpooledBuffer() {
-		if (direct) {
-			return UnpooledByteBufAllocator.DEFAULT.directBuffer();
-		} else {
-			return UnpooledByteBufAllocator.DEFAULT.heapBuffer();
-		}
-	}
-
 }
