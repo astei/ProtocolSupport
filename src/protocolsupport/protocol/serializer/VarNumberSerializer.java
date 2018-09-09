@@ -5,6 +5,8 @@ import io.netty.handler.codec.DecoderException;
 
 public class VarNumberSerializer {
 
+	public static final int MAX_LENGTH = 5;
+
 	public static int readVarInt(ByteBuf from) {
 		int value = 0;
 		int length = 0;

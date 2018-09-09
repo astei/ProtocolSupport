@@ -15,7 +15,6 @@ import protocolsupport.protocol.serializer.MiscSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
 import protocolsupport.protocol.storage.netcache.NetworkDataCache;
 import protocolsupport.protocol.utils.registry.MiddleTransformerRegistry;
-import protocolsupport.utils.netty.Allocator;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 import protocolsupport.zplatform.ServerPlatform;
 
@@ -39,7 +38,7 @@ public abstract class AbstractPacketDecoder extends MessageToMessageDecoder<Byte
 		packetTransformer.readFromClientData(buffer);
 		try (RecyclableCollection<ServerBoundPacketData> data = processPackets(channel, packetTransformer.toNative())) {
 			for (ServerBoundPacketData packetdata : data) {
-				ByteBuf receivedata = Allocator.allocateBuffer();
+				ByteBuf receivedata = channel.alloc().heapBuffer(packetdata.readableBytes() + VarNumberSerializer.MAX_LENGTH);
 				VarNumberSerializer.writeVarInt(receivedata, packetdata.getPacketId());
 				receivedata.writeBytes(packetdata);
 				to.add(receivedata);
