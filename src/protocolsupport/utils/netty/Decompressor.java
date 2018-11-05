@@ -34,6 +34,7 @@ public class Decompressor {
 	}
 
 	public void recycle() {
+		inflater.reset();
 		handle.recycle(this);
 	}
 
