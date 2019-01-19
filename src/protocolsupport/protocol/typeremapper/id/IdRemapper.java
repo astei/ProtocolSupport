@@ -24,7 +24,7 @@ public class IdRemapper {
 			applyDefaultRemaps();
 		}
 		public void applyDefaultRemaps() {
-			remappings.clear();
+			this.clear();
 			registerRemapEntry(Material.CONCRETE, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.CONCRETE_POWDER, Material.WOOL, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.WHITE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);

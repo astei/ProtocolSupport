@@ -35,7 +35,7 @@ public class ItemStackRemapper {
 			applyDefaultRemaps();
 		}
 		public void applyDefaultRemaps() {
-			remappings.clear();
+			this.clear();
 			//modified copy of blocks remapper adapted to items
 			registerRemapEntry(Material.CONCRETE, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.CONCRETE_POWDER, Material.WOOL, ProtocolVersionsHelper.BEFORE_1_12);
