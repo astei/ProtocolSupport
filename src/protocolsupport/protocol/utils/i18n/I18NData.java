@@ -33,7 +33,7 @@ public class I18NData {
 		if (!builtInLocales.contains(locale)) {
 			throw new IllegalArgumentException(MessageFormat.format("{0} is not a built-in locale", locale));
 		}
-		return loadAndRegisterI18N(locale, Utils.getResource(resource_path + locale + ".json"));
+		return loadAndRegisterI18N(locale, Utils.getResource(resource_path + locale + ".lang"));
 	}
 
 	public static I18N loadAndRegisterI18N(String locale, BufferedReader stream) {
