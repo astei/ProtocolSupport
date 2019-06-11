@@ -30,28 +30,26 @@ public class FeatureEmulation implements Listener {
 	public FeatureEmulation() {
 		Bukkit.getScheduler().runTaskTimer(
 			ProtocolSupport.getInstance(),
-			() ->
-				Bukkit.getOnlinePlayers().stream()
-				.filter(player -> {
+			() -> {
+				for (Player player : Bukkit.getOnlinePlayers()) {
 					ProtocolVersion version = ProtocolSupportAPI.getProtocolVersion(player);
-					return (version.getProtocolType() == ProtocolType.PC) && version.isBefore(ProtocolVersion.MINECRAFT_1_9);
-				})
-				.filter(player -> player.hasPotionEffect(PotionEffectType.LEVITATION) && !player.isFlying())
-				.forEach(player -> {
-					PotionEffect levitation = player.getPotionEffect(PotionEffectType.LEVITATION);
-					int amplifierByte = (byte) levitation.getAmplifier();
-					if (levitation.getAmplifier() != amplifierByte) {
-						player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, levitation.getDuration(), amplifierByte), true);
-						Vector vel = player.getVelocity();
-						double noLevitationVelY = (vel.getY() - ((levitation.getAmplifier() + 1) * 0.01)) / 0.8;
-						double byteAmplifierVelY = (noLevitationVelY * 0.8D) + ((amplifierByte + 1) * 0.01);
-						vel.setY(byteAmplifierVelY);
-						player.setVelocity(vel);
-					} else {
-						player.setVelocity(player.getVelocity());
+					if (version.getProtocolType() == ProtocolType.PC && version.isBefore(ProtocolVersion.MINECRAFT_1_9)
+						&& player.hasPotionEffect(PotionEffectType.LEVITATION) && !player.isFlying()) {
+						PotionEffect levitation = player.getPotionEffect(PotionEffectType.LEVITATION);
+						int amplifierByte = (byte) levitation.getAmplifier();
+						if (levitation.getAmplifier() != amplifierByte) {
+							player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, levitation.getDuration(), amplifierByte), true);
+							Vector vel = player.getVelocity();
+							double noLevitationVelY = (vel.getY() - ((levitation.getAmplifier() + 1) * 0.01)) / 0.8;
+							double byteAmplifierVelY = (noLevitationVelY * 0.8D) + ((amplifierByte + 1) * 0.01);
+							vel.setY(byteAmplifierVelY);
+							player.setVelocity(vel);
+						} else {
+							player.setVelocity(player.getVelocity());
+						}
 					}
-				}),
-			1, 1);
+				}
+			}, 1, 1);
 	}
 
 	@EventHandler
