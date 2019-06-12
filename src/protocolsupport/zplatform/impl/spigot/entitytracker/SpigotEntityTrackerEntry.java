@@ -1,11 +1,9 @@
 package protocolsupport.zplatform.impl.spigot.entitytracker;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
+import io.netty.channel.Channel;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerVelocityEvent;
@@ -146,6 +144,16 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 		return entity.getId();
 	}
 
+	/**
+	 * An unsafe method that simply queues the packet for writing, and expects to flush later.
+	 * @param player the player to send to
+	 * @param packet the packet to send
+	 */
+	private void queueWrite(EntityPlayer player, Packet<?> packet) {
+		Channel ch = player.playerConnection.networkManager.channel;
+		ch.write(packet, ch.voidPromise());
+	}
+
 	protected void updateRotationIfChanged() {
 		float eYaw = entity.yaw;
 		float ePitch = entity.pitch;
@@ -189,7 +197,7 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 					worldmap.a(entityplayer, itemstack);
 					Packet<?> packet = Items.FILLED_MAP.a(itemstack, entity.world, entityplayer);
 					if (packet != null) {
-						entityplayer.playerConnection.sendPacket(packet);
+						queueWrite(entityplayer, packet);
 					}
 				}
 			}
@@ -289,11 +297,11 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 					lastLocZ = entity.locZ;
 					lastYaw = entity.yaw;
 					lastPitch = entity.pitch;
-					entityplayer.playerConnection.sendPacket(spawnPacket);
+					queueWrite(entityplayer, spawnPacket);
 					lastHeadYaw = entity.getHeadRotation();
 					broadcast(new PacketPlayOutEntityHeadRotation(entity, (byte) MathHelper.d((lastHeadYaw * 256.0f) / 360.0f)));
 					if (!entity.getDataWatcher().d()) {
-						entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entity.getId(), entity.getDataWatcher(), true));
+						queueWrite(entityplayer, new PacketPlayOutEntityMetadata(entity.getId(), entity.getDataWatcher(), true));
 					}
 					if (entity instanceof EntityLiving) {
 						EntityLiving entityliving = (EntityLiving) entity;
@@ -302,42 +310,64 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 							((EntityPlayer) entity).getBukkitEntity().injectScaledMaxHealth(updateAttrs, false);
 						}
 						if (!updateAttrs.isEmpty()) {
-							entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(entity.getId(), updateAttrs));
+							queueWrite(entityplayer, new PacketPlayOutUpdateAttributes(entity.getId(), updateAttrs));
 						}
 						for (EnumItemSlot enumitemslot : EnumItemSlot.values()) {
 							ItemStack itemstack = entityliving.getEquipment(enumitemslot);
 							if (!itemstack.isEmpty()) {
-								entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityEquipment(entity.getId(), enumitemslot, itemstack));
+								queueWrite(entityplayer, new PacketPlayOutEntityEquipment(entity.getId(), enumitemslot, itemstack));
 							}
 						}
 						for (MobEffect mobeffect : entityliving.getEffects()) {
-							entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityEffect(entity.getId(), mobeffect));
+							queueWrite(entityplayer, new PacketPlayOutEntityEffect(entity.getId(), mobeffect));
 						}
 					}
 					if (updateVelocity && !(spawnPacket instanceof PacketPlayOutSpawnEntityLiving)) {
 						lastMotX = entity.motX;
 						lastMotY = entity.motY;
 						lastMotZ = entity.motZ;
-						entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityVelocity(entity.getId(), entity.motX, entity.motY, entity.motZ));
+						queueWrite(entityplayer, new PacketPlayOutEntityVelocity(entity.getId(), entity.motX, entity.motY, entity.motZ));
 					}
 					if (entity instanceof EntityHuman) {
 						EntityHuman entityhuman = (EntityHuman) entity;
 						if (entityhuman.isSleeping()) {
-							entityplayer.playerConnection.sendPacket(new PacketPlayOutBed(entityhuman, new BlockPosition(entity)));
+							queueWrite(entityplayer, new PacketPlayOutBed(entityhuman, new BlockPosition(entity)));
 						}
 					}
 					if (!entity.bF().isEmpty()) {
-						entityplayer.playerConnection.sendPacket(new PacketPlayOutMount(entity));
+						queueWrite(entityplayer, new PacketPlayOutMount(entity));
 					}
 					if (entity.isPassenger()) {
-						entityplayer.playerConnection.sendPacket(new PacketPlayOutMount(entity.bJ()));
+						queueWrite(entityplayer, new PacketPlayOutMount(entity.bJ()));
 					}
+
+					// These others may in some cases still flush the player's channel. This is still much better than
+					// constantly waking up a Netty thread every time we need to send a packet. Batching writes is a
+					// recommended practice from the Netty authors.
 					entity.b(entityplayer);
 					entityplayer.d(entity);
 				}
 			} else {
 				a(entityplayer);
 			}
+		}
+	}
+
+	@Override
+	public void broadcast(Packet<?> packet) {
+		Iterator iterator = this.trackedPlayers.iterator();
+
+		while(iterator.hasNext()) {
+			EntityPlayer entityplayer = (EntityPlayer)iterator.next();
+			queueWrite(entityplayer, packet);
+		}
+	}
+
+	@Override
+	public void broadcastIncludingSelf(Packet<?> packet) {
+		this.broadcast(packet);
+		if (this.entity instanceof EntityPlayer) {
+			queueWrite((EntityPlayer) this.entity, packet);
 		}
 	}
 
