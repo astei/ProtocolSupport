@@ -36,7 +36,14 @@ public class SpigotEntityTracker extends EntityTracker {
 	@Override
 	public void addEntity(Entity entity, int trackRange, int updateInterval, boolean updateVelocity) {
 		AsyncCatcher.catchOp("entity track");
-		trackRange = TrackingRange.getEntityTrackingRange(entity, trackRange);
+		// Imagine Start
+		if (entity.trackingRange != -1) {
+			trackRange = entity.trackingRange;
+		} else {
+			trackRange = TrackingRange.getEntityTrackingRange(entity, trackRange);
+			entity.trackingRange = trackRange;
+		}
+		// Imagine End
 		try {
 			if (trackedEntities.b(entity.getId())) {
 				throw new IllegalStateException("Entity is already tracked!");
