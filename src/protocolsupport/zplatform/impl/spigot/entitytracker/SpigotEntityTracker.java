@@ -5,11 +5,48 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Bukkit;
 import org.spigotmc.AsyncCatcher;
 import org.spigotmc.TrackingRange;
 
+import net.minecraft.server.v1_12_R1.CrashReport;
+import net.minecraft.server.v1_12_R1.CrashReportSystemDetails;
+import net.minecraft.server.v1_12_R1.Entity;
+import net.minecraft.server.v1_12_R1.EntityAreaEffectCloud;
+import net.minecraft.server.v1_12_R1.EntityArmorStand;
+import net.minecraft.server.v1_12_R1.EntityArrow;
+import net.minecraft.server.v1_12_R1.EntityBat;
+import net.minecraft.server.v1_12_R1.EntityBoat;
+import net.minecraft.server.v1_12_R1.EntityEgg;
+import net.minecraft.server.v1_12_R1.EntityEnderCrystal;
+import net.minecraft.server.v1_12_R1.EntityEnderDragon;
+import net.minecraft.server.v1_12_R1.EntityEnderPearl;
+import net.minecraft.server.v1_12_R1.EntityEnderSignal;
+import net.minecraft.server.v1_12_R1.EntityEvokerFangs;
+import net.minecraft.server.v1_12_R1.EntityExperienceOrb;
+import net.minecraft.server.v1_12_R1.EntityFallingBlock;
+import net.minecraft.server.v1_12_R1.EntityFireball;
+import net.minecraft.server.v1_12_R1.EntityFireworks;
+import net.minecraft.server.v1_12_R1.EntityFishingHook;
+import net.minecraft.server.v1_12_R1.EntityHanging;
+import net.minecraft.server.v1_12_R1.EntityItem;
+import net.minecraft.server.v1_12_R1.EntityLlamaSpit;
+import net.minecraft.server.v1_12_R1.EntityMinecartAbstract;
+import net.minecraft.server.v1_12_R1.EntityPlayer;
+import net.minecraft.server.v1_12_R1.EntityPotion;
+import net.minecraft.server.v1_12_R1.EntityShulkerBullet;
+import net.minecraft.server.v1_12_R1.EntitySmallFireball;
+import net.minecraft.server.v1_12_R1.EntitySnowball;
+import net.minecraft.server.v1_12_R1.EntitySquid;
+import net.minecraft.server.v1_12_R1.EntityTNTPrimed;
+import net.minecraft.server.v1_12_R1.EntityThrownExpBottle;
+import net.minecraft.server.v1_12_R1.EntityTracker;
+import net.minecraft.server.v1_12_R1.EntityTrackerEntry;
+import net.minecraft.server.v1_12_R1.EntityTypes;
+import net.minecraft.server.v1_12_R1.EntityWither;
+import net.minecraft.server.v1_12_R1.IAnimal;
+import net.minecraft.server.v1_12_R1.ReportedException;
+import net.minecraft.server.v1_12_R1.WorldServer;
 import protocolsupport.utils.CachedInstanceOfChain;
 import protocolsupport.utils.ReflectionUtils;
 
@@ -129,13 +166,4 @@ public class SpigotEntityTracker extends EntityTracker {
 		}
 	}
 
-	@Override
-	public void updatePlayers() {
-		super.updatePlayers();
-		for (EntityHuman player : this.world.players) {
-			if (player instanceof EntityPlayer) {
-				((EntityPlayer) player).playerConnection.networkManager.channel.flush();
-			}
-		}
-	}
 }
