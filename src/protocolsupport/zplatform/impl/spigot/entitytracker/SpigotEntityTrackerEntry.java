@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import com.destroystokyo.paper.PaperConfig;
+import com.destroystokyo.paper.util.EntityTrackerTurbo;
+import net.minecraft.server.v1_12_R1.EntityTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerVelocityEvent;
@@ -264,6 +267,7 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 	@Override
 	public void a(final EntityPlayer entityplayer) {
 		if (removeTrackedPlayer(entityplayer)) {
+			this.trackerNode.playersTracked.remove(entityplayer.getUniqueID());
 			entity.c(entityplayer);
 			entityplayer.c(entity);
 		}
@@ -273,6 +277,14 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 	public void updatePlayer(EntityPlayer entityplayer) {
 		AsyncCatcher.catchOp("player tracker update");
 		if (entityplayer != entity) {
+			// Imagine Start - Entity tracker optimizations
+			if (PaperConfig.useOptimizedEntityTracker) {
+				EntityTracker.entityTrackerTurbo.checkPlayer(entityplayer, entity, this);
+
+				++count;
+			}
+			// Imagine End
+
 			if (c(entityplayer)) {
 				if (!trackedPlayers.contains(entityplayer) && (canPlayerSeeTrackerChunk(entityplayer) || entity.attachedToPlayer)) {
 					if (entity instanceof EntityPlayer) {
@@ -359,10 +371,22 @@ public class SpigotEntityTrackerEntry extends EntityTrackerEntry {
 
 	@Override
 	public boolean c(EntityPlayer entityplayer) {
-		double diffX = entityplayer.locX - entity.locX;
-		double diffZ = entityplayer.locZ - entity.locZ;
-		int lTrackRange = Math.min(trackRange, viewDistance);
-		return (diffX >= -lTrackRange) && (diffX <= lTrackRange) && (diffZ >= -lTrackRange) && (diffZ <= lTrackRange) && entity.a(entityplayer);
+		if (PaperConfig.useOptimizedEntityTracker && !(entity instanceof EntityHuman)) {
+			EntityTrackerTurbo.TrackerNode trackerNode = this.trackerNode;
+			if (trackerNode != null) {
+				if (trackerNode.parentNode != null) trackerNode = trackerNode.parentNode;
+
+				return trackerNode.playersTracked.contains(entityplayer.getUniqueID()) && entity.a(entityplayer);
+			}
+
+			return false;
+		} else {
+			double diffX = entityplayer.locX - entity.locX;
+			double diffZ = entityplayer.locZ - entity.locZ;
+			int lTrackRange = Math.min(trackRange, viewDistance);
+
+			return (diffX >= -lTrackRange) && (diffX <= lTrackRange) && (diffZ >= -lTrackRange) && (diffZ <= lTrackRange) && entity.a(entityplayer);
+		}
 	}
 
 	protected boolean canPlayerSeeTrackerChunk(EntityPlayer entityplayer) {
